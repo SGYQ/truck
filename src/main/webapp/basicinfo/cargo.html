@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+	<title>货物信息</title>
+	<link href="../scripts/demo.css" rel="stylesheet" type="text/css" />
+	<script src="../scripts/boot.js" type="text/javascript"></script>
+	<script src="../scripts/jquery.min.js" type="text/javascript"></script>
+</head>
+<body>
+	<h1>货物信息管理</h1>
+	<div style="width:700px;">
+		<div class="mini-toolbar" style="border-bottom:0; padding:0px;">
+			<table style="width:100%;">
+				<tr>
+					<td style="width: 100%;">
+						<a class="mini-button" iconCls="icon-add" onclick="add()">添加</a> 
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+	<!--  height: 320px; -->
+	<div id="datagrid1" class="mini-datagrid" style="width: 700px;" allowResize="true" 
+		url="../CargoServlet?method=queryCargos" multiSelect="true">
+        <div property="columns">
+            <div field="c_id" width="100" align="center" headerAlign="center" allowSort="true">货物编号</div>                
+            <div field="c_name" width="100" allowSort="true" align="center" headerAlign="center">货物名称</div>            
+            <div field="c_weight" width="100" align="center" headerAlign="center" allowSort="true">货物重量/kg</div>
+            <div field="c_store" width="100" align="center" headerAlign="center" 
+            	renderer="changeColor" allowSort="true">货物库存量</div>
+                                                
+            <div name="action" width="100" align="center" headerAlign="center" align="center"
+				renderer="onActionRenderer" cellStyle="padding:0;">操作</div>         
+        </div>
+	</div>
+	
+	<script type="text/javascript">
+        mini.parse();
+        var grid = mini.get("datagrid1");
+        grid.load();
+        
+        <!-- 当货物库存量<=0时,整行显示为黄色 -->
+        function changeColor(e)
+        {
+        	if(e.row.c_store <=0 )
+        		e.rowStyle = 'background-color:#f3f788';
+         	return e.value;
+        }
+
+        <!-- 添加信息 -->
+        function add()
+        {
+            mini.open({
+                targetWindow: window,
+                url: "cargoadd.html",
+                title: "新增", width: 600, height: 400,
+                onload: function () {
+                },
+                ondestroy: function (action) {
+                    grid.reload();
+                }
+            });
+        }
+        
+       <!-- 编辑(修改)信息 -->
+       function edit() 
+       {
+           var row = grid.getSelected();
+           if (row)
+           {
+	               mini.open({
+	                   url: "basicinfo/cargoedit.html",
+	                   title: "编辑货物信息", width:600, height:400,
+	                   onload: function () {
+	                       var iframe = this.getIFrameEl();
+	                       var data = { action: "edit", id:row.c_id};  //改
+	                       iframe.contentWindow.SetData(data);
+	                   },
+	                   ondestroy: function(action){ grid.reload();}
+	               });
+               
+           } else 
+               alert("请选中一条记录");
+       }
+        
+        function onActionRenderer(e)
+        {
+            var grid = e.sender;
+            var record = e.record;
+            var uid = record._uid;
+            var rowIndex = e.rowIndex;
+            var s='<a class="Edit_Button" href="javascript:edit(\'' +uid+ '\')">修改</a>' +'&emsp;&emsp;';
+                       
+            return s;
+        }
+        
+        function CloseWindow(action) 
+        {            
+            if (action == "close" && form.isChanged()) {
+                if (confirm("数据被修改了，是否先保存？"))
+                    return false;
+            }
+            if (window.CloseOwnerWindow) 
+            	return window.CloseOwnerWindow(action);
+            else 
+            	window.close();            
+        }
+    </script>
+</body>
+</html>

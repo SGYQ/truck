@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+	<title>车辆/业务信息</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="../scripts/boot.js" type="text/javascript"></script>
+    <script src="../scripts/jquery.min.js" type="text/javascript"></script>
+    <style type="text/css">
+        .New_Button, .Edit_Button, .Delete_Button, .Update_Button, .Cancel_Button
+        {
+            font-size:11px;color:#1B3F91;font-family:Verdana;  
+            margin-right:5px;          
+        }
+        .map{width:800px; height:600px;}
+    </style>
+    
+</head>
+<body> 
+	车辆&业务/订单信息
+    <div id="car_grid" class="mini-datagrid" style="width:1010px;height:325px;" 
+        url="../CarServlet?method=queryCars"  idField="licensenumber"
+        onselectionchanged="onSelectionChanged" selectOnLoad="true">
+        <div property="columns">            
+            <div field="licensenumber" width="100" align="center" headerAlign="center" allowSort="true">车牌号</div>                
+            <div field="oilwear" width="100" allowSort="true" align="center" headerAlign="center">油耗(百公里)</div>            
+            <div field="emptyweight" width="100" align="center" headerAlign="center" allowSort="true">空车重量/kg</div>
+            <div field="maxload" width="100" align="center" headerAlign="center" allowSort="true">标准载重/kg</div>                                    
+            <div field="loadweight" width="100" align="center" headerAlign="center"allowSort="true">当前载重/kg</div>
+            
+            <div field="starting_" width="100" align="center" headerAlign="center"allowSort="true">出发地</div>
+            <div field="destination" width="100" align="center" headerAlign="center"allowSort="true">目的地</div>
+            <div field="currentlocation" width="100" align="center" headerAlign="center"allowSort="true">当前位置</div>
+            <div field="c_status" width="100" align="center" headerAlign="center"allowSort="true">车辆状态</div>
+            
+            <div name="action" width="100" align="center" headerAlign="center" align="center"
+				renderer="onActionRenderer" cellStyle="padding:0;">操作</div>         
+        </div>
+    </div> 
+
+    
+    <div style="width:1010px;">
+		<div class="mini-toolbar" style="border-bottom:0; padding:0px;">
+			<table style="width:100%;">
+				<tr>
+					<td style="width: 100%;">
+						<a class="mini-button" iconCls="icon-remove"onclick="remove()">删除</a>
+					</td>
+					<td style="white-space: nowrap;">
+						<input id="b_status" class="mini-combobox" emptyText="订单状态" style="width:150px;" 
+						data="[{id:'待发货',text:'待发货'},{id:'运输中',text:'运输中'},{id:'送达',text:'送达'}]" onenter="onKeyEnter"/>
+						<a class="mini-button" onclick="search()">查询</a>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+    <div id="business_grid" class="mini-datagrid" style="width:1010px;height:200px;" 
+        url="../BusinessServlet?method=queryBusinessByNumber" multiSelect="true"allowResize="true" >
+        <div property="columns">  
+        	<div type="indexcolumn"></div>
+			<div type="checkcolumn"></div>  
+			<div field="b_id" width="200" headerAlign="center"align="center"allowSort="true">订单编号</div>
+			<div field="licensenumber" width="150" headerAlign="center"align="center"allowSort="true">车牌号</div>
+			<div field="c_id" width="100" headerAlign="center"align="center"allowSort="true">货物编号</div>
+			<div field="amount" width="100" headerAlign="center"align="center"allowSort="true">货物数量</div>
+			<div field="b_date" width="150" headerAlign="center"align="center"allowSort="true">订单生产日期</div>
+			<div field="b_status" width="100" headerAlign="center"align="center"allowSort="true">订单状态</div>
+			<div field="remark" width="100" headerAlign="center"align="center"allowSort="true">备注</div>
+        </div>
+    </div>      
+	
+	<div id="r_map" class="map"></div>
+	
+	<script src="http://api.map.baidu.com/api?v=2.0&ak=3tULeGMAiP6M3v2bOdPoGb1NDdmw2sG8"></script>
+    <script type="text/javascript">
+        mini.parse();
+
+        var car_grid = mini.get("car_grid");
+        var business_grid = mini.get("business_grid");
+        car_grid.load();
+        
+        function onSelectionChanged(e) 
+        {
+            var grid = e.sender;
+            var record = grid.getSelected();
+            if (record)
+            	business_grid.load({ licensenumber: record.licensenumber });
+        }
+        ///////////////////////////////////////////////////////       
+		<!-- 查询 -->
+        function search() {
+            var b_status = mini.get("b_status").getValue();
+            grid.load({ b_status: b_status });
+        }
+        function onKeyEnter(e) {
+            search();
+        } 
+        
+       <!-- 删除信息  -->
+       function remove()
+       {
+            var rows = business_grid.getSelecteds();  //改
+            if (rows.length > 0)
+            {
+                if (confirm("确定删除选中记录？")) 
+                {
+                    var ids = [];
+                    for (var i=0, l=rows.length; i < l; i++)
+                    {
+                        ids.push(rows[i].b_id);
+                    }
+                    var id = ids.join(',');
+	                    $.ajax({ 
+	                        url:"../BusinessServlet?method=cancelBusinessById",
+	                        type: 'post',
+	                        dataType:'TEXT',
+	                        data:{id : id},
+	                        success: function(text) 
+	                        {
+	                        	mini.alert(text,"title",function(){
+	                        		CloseWindow("remove");
+	                        	});
+	                        	business_grid.reload();   //改*****
+	                        	car_grid.reload();   //改*****
+	                        	
+	                        },
+	                        error: function () { }
+	                    });
+                }
+            } else
+                alert("请选中一条记录");
+        }
+        
+
+
+        function onActionRenderer(e)
+        {
+            var grid = e.sender;
+            var record = e.record;
+            var uid = record._uid;
+            var rowIndex = e.rowIndex;
+            var s='<a class="Edit_Button" href="javascript:depart(\'' +uid+ '\')">发车</a>' +'&emsp;&emsp;';
+                       
+            return s;
+        }
+        
+        //发车
+        function depart()
+        {
+        	var row = car_grid.getSelected();  //选中一行
+        	
+    		var map = new BMap.Map('r_map');
+    	 	var start = row.starting_; //起点
+    		var end = row.destination; //终点
+    		map.centerAndZoom(start, 11);  //初始化地图,设置中心点坐标和地图级别
+    		
+     		var driving = new BMap.DrivingRoute(map, {renderOptions:{map:map} });
+    		//显示一条公交线路
+    		driving.search(start, end);
+    		
+    		//获取坐标数据
+    	    var drv = new BMap.DrivingRoute(start, {
+    	        onSearchComplete: function(res) {
+    	        	var arrPoints =[];
+    	            if (drv.getStatus() == BMAP_STATUS_SUCCESS) 
+    				{
+    	                var plan = res.getPlan(0);
+    	                for(var j=0,length=plan.getNumRoutes(); j< length; j++)
+    					{
+    	                    var route = plan.getRoute(j);
+    	                    arrPoints = arrPoints.concat(route.getPath());
+    	                }
+    	         
+    	            }
+    	            
+    	            var jsonStr = JSON.stringify(arrPoints);
+    	            //传送后台
+    	    		$.ajax({
+    	    			cache: false,
+    	    			url: "../CarryServlet?method=startOff",  
+    	    	        type: 'POST',
+    	    	        dataType : "json",
+    	    	        data:{"licensenumber":row.licensenumber,"points" : jsonStr,"start":row.starting_,"end":row.destination},
+    	    	        traditional: true,  //不可或缺
+    	    	        success: function(text) {
+    	    	        	mini.alert(text,"title",function(){
+                        		CloseWindow("remove");
+                        	});
+    	    	        	business_grid.reload();   //改*****
+                        	car_grid.reload();   //改*****
+    	    	        }, error: function() {}
+    	    	    });
+    	        }
+    	    });
+    		drv.search(start, end);	
+        	
+        }
+        
+        
+        function CloseWindow(action) 
+        {            
+            if (action == "close" && form.isChanged()) {
+                if (confirm("数据被修改了，是否先保存？"))
+                    return false;
+            }
+            if (window.CloseOwnerWindow) 
+            	return window.CloseOwnerWindow(action);
+            else 
+            	window.close();            
+        }
+    </script>
+    
+    
+</body>
+</html>

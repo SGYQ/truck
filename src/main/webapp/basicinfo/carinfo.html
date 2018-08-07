@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>车辆基本信息</title>
+	<link href="../scripts/demo.css" rel="stylesheet" type="text/css" />
+	<script src="../scripts/boot.js" type="text/javascript"></script>
+	<script src="../scripts/jquery.min.js" type="text/javascript"></script>
+</head>
+<body>
+	<h1>物流车辆基本信息</h1>
+	<div >
+		<div class="mini-toolbar" style="border-bottom:0; padding:0px;">
+			<table style="width:100%;">
+				<tr>
+					<td style="width: 100%;">
+						<a class="mini-button" iconCls="icon-add" onclick="add()">添加</a> 
+						<a class="mini-button" iconCls="icon-remove"onclick="remove()">删除</a>
+					</td>
+					<td style="white-space: nowrap;">
+						<input id="c_status" class="mini-combobox" emptyText="车辆状态.." url="../data/c_status.txt" 
+						nullItemText="车辆状态.."style="width:150px;" onenter="onKeyEnter"/>
+						<a class="mini-button" onclick="search()">查询</a>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+	<!-- height: 320px; style=""  -->
+	<div id="datagrid1" class="mini-datagrid" allowResize="true" 
+		url="../CarServlet?method=queryCars" multiSelect="true">
+        <div property="columns">
+        	<div type="indexcolumn"></div>
+			<div type="checkcolumn"></div>            
+            <div field="licensenumber" width="100" align="center" headerAlign="center" allowSort="true">车牌号</div>                
+            <div field="oilwear" width="100" allowSort="true" align="center" headerAlign="center">油耗(百公里)</div>            
+            <div field="emptyweight" width="100" align="center" headerAlign="center" allowSort="true">空车重量/kg</div>
+            <div field="maxload" width="100" align="center" headerAlign="center" allowSort="true">标准载重/kg</div>                                    
+            <div field="loadweight" width="100" align="center" headerAlign="center"
+            	renderer="changeColor" allowSort="true">当前载重/kg</div>
+            
+            <div field="starting_" width="100" align="center" headerAlign="center"allowSort="true">出发地</div>
+            <div field="destination" width="100" align="center" headerAlign="center"allowSort="true">目的地</div>
+            <div field="currentlocation" width="100" align="center" headerAlign="center"allowSort="true">当前位置</div>
+            <div field="c_status" width="100" align="center" headerAlign="center"allowSort="true">车辆状态</div>
+            
+            <div name="action" width="90" align="center" headerAlign="center" align="center"
+				renderer="onActionRenderer" cellStyle="padding:0;">操作</div>         
+        </div>
+	</div>
+	
+	<script type="text/javascript">
+        mini.parse();
+        var grid = mini.get("datagrid1");
+        grid.load();
+        
+        <!-- 当loadweight>=maxload时,整行显示为红色 -->
+        function changeColor(e)
+        {
+        	if(e.row.loadweight >= e.row.maxload)
+        		e.rowStyle = 'background-color:#ff0080';
+         	return e.value;
+        }
+        
+     	<!-- 查询 -->
+        function search() {
+            var c_status = mini.get("c_status").getValue();
+            grid.load({ c_status: c_status });
+        }
+        function onKeyEnter(e) {
+            search();
+        } 
+
+        <!-- 添加信息 -->
+        function add()
+        {
+            mini.open({
+                targetWindow: window,
+                url: "caradd.html",
+                title: "新增", width: 600, height: 400,
+                onload: function () {
+                },
+                ondestroy: function (action) {
+                    grid.reload();
+                }
+            });
+        }
+       <!-- 删除信息  -->
+       function remove()
+       {
+            var rows = grid.getSelecteds();
+            if (rows.length > 0)
+            {
+                if (confirm("确定删除选中记录？")) 
+                {
+                    var ids = [];
+                    for (var i=0, l=rows.length; i < l; i++)
+                    {
+                        ids.push(rows[i].licensenumber);
+                    }
+                    
+                    var id = ids.join(','); //不可获缺
+	                    $.ajax({ 
+	                    	                    	
+	                        url:"../CarServlet?method=cancelCar",
+	                        type: 'POST',
+	                        data:{id:id},
+	                        traditional: true,  //不可或缺
+	                        success: function(text) 
+	                        {
+	                        	mini.alert(text,"title",function(){CloseWindow("remove");});
+	                            grid.reload();
+	                        },
+	                        error: function () { }
+	                    });
+                }
+            } else
+                alert("请选中一条记录");
+        }
+        
+       <!-- 编辑(修改)信息 -->
+       function edit() 
+       {
+           var row = grid.getSelected();
+           if (row)
+           {
+	               mini.open({
+	                   url: "basicinfo/caredit.html",
+	                   title: "编辑车辆信息", width:600, height:400,
+	                   onload: function () {
+	                       var iframe = this.getIFrameEl();
+	                       var data = { action: "edit", id:row.licensenumber};  //改
+	                       iframe.contentWindow.SetData(data);
+	                   },
+	                   ondestroy: function(action){ grid.reload();}
+	               });
+               
+           } else 
+               alert("请选中一条记录");
+       }
+        
+        function onActionRenderer(e)
+        {
+            var grid = e.sender;
+            var record = e.record;
+            var uid = record._uid;
+            var rowIndex = e.rowIndex;
+            var s='<a class="Edit_Button" href="javascript:edit(\'' +uid+ '\')">修改</a>' +'&emsp;&emsp;';
+                       
+            return s;
+        }
+        
+        function CloseWindow(action) 
+        {            
+            if (action == "close" && form.isChanged()) {
+                if (confirm("数据被修改了，是否先保存？"))
+                    return false;
+            }
+            if (window.CloseOwnerWindow) 
+            	return window.CloseOwnerWindow(action);
+            else 
+            	window.close();            
+        }
+    </script>
+    
+    
+</body>
+</html>

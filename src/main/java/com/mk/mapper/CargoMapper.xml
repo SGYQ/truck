@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mk.mapper.CargoMapper">
+	<!-- 1、查询货物表中所有记录 -->
+	<select id="selectCargos" resultType="com.mk.entry.Cargo">
+		select * from cargo limit #{arg0},#{arg1} 
+	</select>
+	
+	<!-- 2、返回表中记录总数 -->
+	<select id="selectCountOfCargo" resultType="java.lang.Integer">
+		select count(1) from cargo 
+	</select>
+	
+	<!-- 3、根据编号查询货物信息 -->
+	<select id="selectCargoById" parameterType="java.lang.Integer" resultType="com.mk.entry.Cargo">
+		select * from cargo where c_id = #{id}
+	</select>
+	
+	<!-- 4、添加货物 -->
+	<insert id="insertCargo" parameterType="com.mk.entry.Cargo">
+		INSERT INTO cargo(c_id,c_name,c_weight,c_store) 
+		VALUES(#{c_id},#{c_name},#{c_weight},#{c_store})
+	</insert>
+	
+	<!-- 5、更新货物信息 -->
+	<update id="updateCargo" parameterType="com.mk.entry.Cargo">
+		update cargo set 
+		c_name=#{c_name},c_weight=#{c_weight},c_store=#{c_store} 
+		where c_id=#{c_id} 
+	</update>
+	
+	<!-- 6、查询表中库存量>0的所有货物信息 -->
+	<select id="selectHavingCargo" resultType="com.mk.entry.Cargo">
+		select * from cargo where c_store>0 limit #{arg0},#{arg1}
+	</select>
+	
+	<!-- 7、查询表中库存量>0的货物信息的数目 -->
+	<select id="selectCountOfHavingCargo" resultType="java.lang.Integer">
+		select count(1) from cargo where c_store>0
+	</select>
+	
+	<!-- 8、修改当前该货物的库存量(减,传入负值; 加,传入正值)-->
+	<update id="updateCargoStore">
+		update cargo set c_store = c_store + #{arg0} 
+		where c_id = #{arg1}
+	</update>
+	
+	<!-- 9、根据货物编号查找该货物的重量  -->
+	<select id="selectWeightById" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+		select c_weight from cargo where c_id = #{id}
+	</select>
+	
+</mapper>

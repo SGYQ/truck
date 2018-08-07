@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+	<title>业务订单信息(所有)</title>
+	<script src="../scripts/boot.js" type="text/javascript"></script>
+	<script src="../scripts/jquery.min.js" type="text/javascript"></script>
+</head>
+<body>
+<div style="width:1010px;">
+	<div class="mini-toolbar" style="border-bottom:0; padding:0px;">
+		<table style="width:100%;">
+			<tr>
+				<td style="width: 100%;">
+					<a class="mini-button" iconCls="icon-add" onclick="add()">添加</a> 
+				</td>
+				<td style="white-space: nowrap;">
+					<input id="b_status" class="mini-combobox" emptyText="订单状态" style="width:150px;" 
+					data="[{id:'待发货',text:'待发货'},{id:'运输中',text:'运输中'},{id:'送达',text:'送达'}]" onenter="onKeyEnter"/>
+					<a class="mini-button" onclick="search()">查询</a>
+				</td>
+			</tr>
+		</table>
+	</div>
+</div>
+<div id="business_grid" class="mini-datagrid" style="width:1010px;" 
+     url="../BusinessServlet?method=queryBusiness" multiSelect="true"allowResize="true" >
+     <div property="columns">  
+		<div field="b_id" width="200" headerAlign="center"align="center"allowSort="true">订单编号</div>
+		<div field="licensenumber" width="150" headerAlign="center"align="center"allowSort="true">车牌号</div>
+		<div field="c_id" width="100" headerAlign="center"align="center"allowSort="true">货物编号</div>
+		<div field="amount" width="100" headerAlign="center"align="center"allowSort="true">货物数量</div>
+		<div field="b_date" width="150" headerAlign="center"align="center"dateFormat="yyyy-MM-dd"
+		 ondrawdate="onDrawDate" allowSort="true">订单生成日期</div>
+		<div field="b_status" width="100" headerAlign="center"align="center"allowSort="true">订单状态</div>
+		<div field="remark" width="100" headerAlign="center"align="center"allowSort="true">备注</div>
+     </div>
+</div> 
+
+	<script type="text/javascript">
+        mini.parse();
+        var grid = mini.get("business_grid");
+        grid.load();
+        
+     	<!-- 查询 -->
+        function search() {
+            var b_status = mini.get("b_status").getValue();
+            grid.load({ b_status: b_status });
+        }
+        function onKeyEnter(e) {
+            search();
+        } 
+        
+        <!-- 添加信息 -->
+        function add()
+        {
+            mini.open({
+                targetWindow: window,
+                url: "businessadd.html",
+                title: "新增", width: 600, height: 400,
+                onload: function () {
+                },
+                ondestroy: function (action) {
+                    grid.reload();
+                }
+            });
+        }
+        
+        
+        function CloseWindow(action) 
+        {            
+            if (action == "close" && form.isChanged()) {
+                if (confirm("数据被修改了，是否先保存？"))
+                    return false;
+            }
+            if (window.CloseOwnerWindow) 
+            	return window.CloseOwnerWindow(action);
+            else 
+            	window.close();            
+        }
+    </script>
+</body>
+</html>

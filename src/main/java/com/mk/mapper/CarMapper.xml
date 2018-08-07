@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.mk.mapper.CarMapper">
+	<!-- 1、根据车辆状态查询 -->
+	<select id="selectCars" resultType="com.mk.entry.Car">
+		select * from car 
+		<where>
+			<if test="arg0!=null and arg0!='' ">
+				c_status = #{arg0} 
+			</if>
+		</where>
+		limit #{arg1},#{arg2} 
+	</select>
+	
+	<!-- 2、根据车牌号精准查询 -->
+	<select id="selectCarById" parameterType="String" resultType="com.mk.entry.Car">
+		select * from car where licensenumber = #{id} 
+	</select>
+	
+	<!-- 3、返回表中记录总数 -->
+	<select id="selectCountOfCars" resultType="java.lang.Integer">
+		select count(1) from car
+	</select>
+	
+	<!-- 4、根据车辆状态查询数目 -->
+	<select id="selectCountByStatus" parameterType="java.lang.String" resultType="java.lang.Integer">
+		select count(1) from car where c_status = #{status}
+	</select>
+	
+	<!-- 5、添加车辆信息 -->
+	<insert id="insertCar" parameterType="com.mk.entry.Car">
+		INSERT INTO car 
+		VALUES(#{licensenumber},#{oilwear},#{emptyweight},#{maxload},#{loadweight}, 
+		#{starting_},#{destination},#{currentlocation},#{c_status})
+	</insert>
+	
+	<!-- 6、根据车牌号删除信息 -->
+	<delete id="deleteCar" parameterType="java.lang.String" >
+		DELETE FROM car WHERE  licensenumber = #{id}
+	</delete>
+	
+	<!-- 7、更新车辆信息 -->
+	<update id="updateCar" parameterType="com.mk.entry.Car" >
+		UPDATE car SET 
+		oilwear=#{oilwear},emptyweight=#{emptyweight},maxload=#{maxload},loadweight=#{loadweight},
+		starting_=#{starting_},destination=#{destination},currentlocation=#{currentlocation},c_status=#{c_status} 
+		WHERE licensenumber=#{licensenumber}
+	</update>
+	
+	<!-- 8、根据车牌号更改车辆状态 -->
+	<update id="updateCarStatusById">
+		update car set c_status = #{arg1} where licensenumber = #{arg0}
+	</update>
+	
+	<!-- 9、根据车牌号修改车辆的当前载重(直接设定为某个值) -->
+	<update id="updateCarLoadweightById">
+		update car set loadweight = #{arg1} where licensenumber = #{arg0}
+	</update>
+	
+	<!-- 10、以变化量的形式更新当前车辆的载重 -->
+	<update id="updateCarLoadweightValue">
+		update car set loadweight = loadweight + #{arg1} 
+		where licensenumber= #{arg0}
+	</update>
+	
+</mapper>

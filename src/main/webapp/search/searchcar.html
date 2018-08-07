@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+	<title>物流车辆定位</title>
+	<style type="text/css">
+            *{margin:0;padding:0;}
+            body{font-size:12px;font-family:"微软雅黑";color:#666;}
+            
+            /*top start*/
+            .top{width:100%;height:40px;margin:5px 0;}
+            .top .search{width:700px;height:40px;background:#6cf;box-shadow: 1px 2px 10px -2px #000; 
+            			 margin:0 auto; }
+            .top .search .s-text{width:500px;height:40px;border:none;outline:none;
+            					padding-left:10px;float:left;}
+            .top .search .s-btn{width:190px;height:40px;background:#f30;border:none;
+            					color:#fff;cursor: pointer;outline:none;float:right;}
+            .top .search .s-btn:hover{background:#cc2800;}
+            /*end top*/
+
+            /*content start*/
+            .content{width:90%;height:600px;margin:0 auto;border:1px solid red;}
+            .content .c-title{height:60px;background:#f90;text-align:center;
+            	line-height:60px;font-size:22px;font-weight:300;color:#fff;}
+            .content .c-con{width:90%;height:540px;}
+            /*end content*/
+        </style>
+    <script src="../scripts/boot.js" type="text/javascript"></script>
+    <script src="../scripts/jquery-3.2.1.min.js" type="text/javascript"></script>    
+</head>
+<body>
+	<div class="top">
+        <div class="search">
+            <input type="text" class="s-text" placeholder="请输入 ..." id="s-search"/>
+            <input type="button" class="s-btn" value="搜 索" onclick="search()"/>
+        </div>
+    </div>
+    <!--end top-->
+
+    <!--content start-->
+    <div class="content">
+        <div class="c-con" id="map_canvas"></div>
+    </div>
+    
+    <!--引入地图API-->
+    <script src="http://api.map.baidu.com/api?v=2.0&ak=3tULeGMAiP6M3v2bOdPoGb1NDdmw2sG8"></script>
+	<script type="text/javascript" src="http://api.map.baidu.com/library/LuShu/1.2/src/LuShu_min.js"></script>
+	<script type="text/javascript">
+		
+		var map = new BMap.Map('map_canvas');//初始化地图
+		map.enableScrollWheelZoom(); //允许以鼠标缩放来调节大小
+		map.centerAndZoom("无锡", 10);//设置地图中心和显示级别
+		var driving = new BMap.DrivingRoute(map, {renderOptions:{map:map}} );
+		//根据输入的地名查询经纬度
+		var localSearch = new BMap.LocalSearch(map);
+		localSearch.enableAutoViewport(); //允许自动调节窗体大小
+		//标注
+		var myIcon = new BMap.Icon('http://lbsyun.baidu.com/jsdemo/img/car.png', 
+									new BMap.Size(52,26),{anchor : new BMap.Size(27, 13)});
+		
+		function search(){
+			var number = document.getElementById("s-search").value;
+			
+			$.ajax({ 
+				cache: false,				
+                url:"http://localhost:8080/car/CarryServlet?method=queryLocation",
+                type: 'GET',
+                data:{"number" : number},
+                traditional: true,  //不可或缺
+                success: function(result) {
+                	console.log(result);
+                	
+                	var dataObj = eval("("+result+")");//转换为json对象
+                	var start = dataObj.start;
+                	var end = dataObj.end;
+            		map.centerAndZoom(start,10);
+            		
+                	//闲置车辆，返回信息包括(起点，终点，当前位置)；营运车辆(起点，终点，经度，纬度)
+                	if( getJsonLength(dataObj)==3 )
+                	{
+                		localSearch.setSearchCompleteCallback(function(searchResult){
+                		　　var poi = searchResult.getPoi(0);//poi.point.lng + "," + poi.point.lat; 
+                			console.log(poi.point.lng+","+poi.point.lat);//119.83161,31.342957
+                			console.log(poi.point); //H {lng: 119.83161, lat: 31.342957}
+                			
+                			var carMk = new BMap.Marker(poi.point,{icon:myIcon});  //创建标注
+                			var content = '车牌号: '+number+'<br/>'
+                			+'经度: '+poi.point.lng+' 纬度: '+poi.point.lat+'<br/>'+
+                			'具体位置：'+start; 
+                            //添加鼠标滑过时打开自定义信息窗口事件  
+                            carMk.addEventListener("mouseover",function(){  
+                                    this.openInfoWindow(new BMap.InfoWindow(content, opts));} );  
+                            //添加鼠标离开时关闭自定义信息窗口事件  
+                            carMk.addEventListener("mouseout",function(){this.closeInfoWindow();} );
+                			map.addOverlay(carMk);  //将标注添加到地图中
+                		});
+                		localSearch.search(start);
+                	} else { //营运车辆
+                		driving.search(start, end); //显示一条线路
+                		
+                		console.log( dataObj.index ); //坐标索引
+                		//console.log( dataObj.points[0] ); //输出第一个点
+                		//console.log( dataObj.points[0][0]); //输出第一个点坐标的经度
+                		console.log(dataObj.points.length);
+                		
+                		var routes = [];
+                		for( var i=dataObj.index,length = dataObj.points.length; i<length; i++)
+                		{
+                			var lng = dataObj.points[i][0];	//经度
+                			var lat = dataObj.points[i][1]; //纬度
+                			routes.push( new BMap.Point(lng,lat) );
+                		}
+                		//路书功能
+                        var lushu = new BMapLib.LuShu(map, routes, {
+        					defaultContent:"",
+        					autoView:true,//是否开启自动视野调整，如果开启那么路书在运动过程中会根据视野自动调整
+        					icon  : new BMap.Icon('http://lbsyun.baidu.com/jsdemo/img/car.png', new BMap.Size(52,26),{anchor : new BMap.Size(27, 13)}),
+        					speed: 50,  // 50m/s
+        					enableRotation:true,//是否设置marker随着道路的走向进行旋转
+        					//要在覆盖物移动过程中，显示的特殊点
+        					landmarkPois: []
+        				});
+                        lushu.start(); //启动路书
+                	}
+            		
+                },
+                error: function () { alert("这辆车可能不存在"); }
+            });
+		}
+		
+		//获取JSON的长度
+		function getJsonLength(jsonData)
+		{
+			var jsonLength = 0;
+			for(var item in jsonData)
+				jsonLength++;
+			
+			return jsonLength;
+		}
+		
+	    /****** 鼠标滑过标注时显示详情的事件 *******/  
+	    var opts = {  
+	                    width : 100,     // 信息窗口宽度  
+	                    height: 100,     // 信息窗口高度  
+	                    title : "<b>车辆与定位信息</b>" , // 信息窗口标题  
+	                    enableMessage:true //设置允许信息窗发送短息  
+	                };  
+	</script>
+
+</body>
+</html>

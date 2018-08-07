@@ -1,0 +1,15 @@
+﻿[
+	{ id: "basicinfo", text: "基本信息管理"},
+	{ id: "addCar", pid: "basicinfo", text: "车辆基本信息",iconCls: "icon-edit",url: "basicinfo/carinfo.html"},
+	{ id: "addCargo", pid: "basicinfo", text: "货物信息", iconCls: "icon-edit", url: "basicinfo/cargo.html" },
+	{ id: "addBusiness", pid: "basicinfo", text: "业务信息", iconCls: "icon-edit", url: "basicinfo/business.html" },
+	
+	{ id: "businessinfo", text: "业务信息管理"},
+	{ id: "business", pid: "businessinfo", text: "车辆/业务关联信息", iconCls: "icon-edit",
+		 url: "info/CarAndBusiness.html" },
+	
+	{ id: "search", text: "信息查询"},
+	{ id: "searchCar", pid: "search",text:"物流车辆信息(定位)",iconCls: "icon-edit",url: "search/searchcar.html" },
+	{ id: "searchDemo", pid: "search",text:"车辆定位 示例)",iconCls: "icon-edit",url: "search/search.html" }
+	
+]
